@@ -1,0 +1,13 @@
+# Use the official MySQL Docker image
+FROM mysql:5.7
+
+# Set environment variables to configure MySQL
+ENV MYSQL_USER=admin
+ENV MYSQL_PASSWORD=12345678
+ENV MYSQL_ROOT_PASSWORD=12345678
+ENV MYSQL_DATABASE=mysql
+ENV DB_HOST=mysql.cdxd2n1ta3y4.ap-south-1.rds.amazonaws.com
+
+# Expose the MySQL port
+EXPOSE 3306
+

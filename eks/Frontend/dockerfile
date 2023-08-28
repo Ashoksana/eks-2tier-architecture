@@ -1,0 +1,55 @@
+# Use the official CentOS 7 as the base image
+FROM centos:7
+
+#Working dir
+WORKDIR /eks
+
+# Update the package manager and install necessary packages
+RUN yum -y update 
+RUN yum -y install epel-release
+RUN yum -y install java-1.8.0-openjdk-devel
+RUN yum -y install wget
+
+# Set the JAVA_HOME environment variable
+ENV JAVA_HOME /usr/lib/jvm/java-1.8.0-openjdk
+
+#Install maven using tar file
+RUN cd /eks
+RUN wget https://archive.apache.org/dist/maven/maven-3/3.8.2/binaries/apache-maven-3.8.2-bin.tar.gz
+RUN tar -xvzf apache-maven-3.8.2-bin.tar.gz
+RUN mv apache-maven-3.8.2 /opt/
+RUN ln -s /opt/apache-maven-3.8.2/bin/mvn /usr/bin/mvn
+
+# Install git and clone the code of java
+RUN cd /eks
+RUN yum install -y git
+RUN git clone https://github.com/Ashoksana/aws-rds-java.git
+
+#Build war file using maven
+RUN cd /eks/aws-rds-java
+RUN rm -rf /eks/aws-rds-java/src/main/webapp/login.jsp
+RUN rm -rf /eks/aws-rds-java/src/main/webapp/userRegistration.jsp
+COPY login.jsp /eks/aws-rds-java/src/main/webapp/login.jsp
+COPY userRegistration.jsp /eks/aws-rds-java/src/main/webapp/userRegistration.jsp
+RUN cd /eks/aws-rds-java/ && mvn clean package
+
+# Download and install Apache Tomcat 7
+# Download and install Apache Tomcat 7
+RUN cd /eks/ && \
+    wget https://archive.apache.org/dist/tomcat/tomcat-7/v7.0.94/bin/apache-tomcat-7.0.94.tar.gz && \
+    tar xvf apache-tomcat-7.0.94.tar.gz && \
+    rm apache-tomcat-7.0.94.tar.gz
+
+# Move the war file from aws-rds-java to tomcat
+RUN mv /eks/aws-rds-java/target/LoginWebApp.war /eks/apache-tomcat-7.0.94/webapps/
+
+
+# Copy the tomcat-users.xml configuration
+COPY tomcat-users.xml /eks/apache-tomcat-7.0.94/conf/tomcat-users.xml
+
+# Expose the default Tomcat port
+EXPOSE 8080
+
+# Start Tomcat
+CMD ["/bin/bash", "-c", "/eks/apache-tomcat-7.0.94/bin/startup.sh run && tail -f /eks/apache-tomcat-7.0.94/logs/catalina.out"]
+
